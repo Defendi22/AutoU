@@ -105,7 +105,7 @@ email-classifier/
 
 **1. Clone o repositório:**
 ```bash
-git clone https://github.com/SEU_USUARIO/email-classifier.git
+git clone https://github.com/Defendi22/AutoU
 cd email-classifier
 ```
 
