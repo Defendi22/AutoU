@@ -249,7 +249,7 @@ Classifica o email e retorna a análise.
 
 ## 📄 Licença
 
-Este projeto foi desenvolvido como desafio técnico.
+Este projeto foi desenvolvido como desafio técnico. Espero que gostem 😀
 
 ---
 
