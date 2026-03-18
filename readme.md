@@ -10,7 +10,7 @@
 
 **Aplicação web com IA para classificação automática de emails corporativos e geração de respostas inteligentes.**
 
-[🚀 Acessar aplicação](https://seu-link.onrender.com) · [📋 Ver testes](#-testes) · [🐳 Rodar com Docker](#-rodando-com-docker)
+[🚀 Acessar aplicação](https://autou-x0vv.onrender.com) · [📋 Ver testes](#-testes) · [🐳 Rodar com Docker](#-rodando-com-docker)
 
 </div>
 
