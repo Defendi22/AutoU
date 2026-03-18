@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Email Classifier AI</title>
+   <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <div class="app">
+
+    <header class="header">
+      <div class="badge">
+        <span class="dot"></span> sistema online
+      </div>
+      <h1>Email Classifier AI</h1>
+      <p>Classificação inteligente de emails corporativos</p>
+    </header>
+
+    <div class="card">
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab('text')">Digitar texto</button>
+        <button class="tab" onclick="switchTab('file')">Upload de arquivo</button>
+      </div>
+
+      <div id="tab-text">
+        <div class="label">Conteúdo do email</div>
+        <textarea id="email-text" placeholder="Cole aqui o conteúdo do email para classificação..."></textarea>
+      </div>
+
+      <div id="tab-file" style="display:none">
+        <div class="label">Arquivo do email</div>
+        <label class="upload-area" for="file-input">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <p id="file-label">Clique para selecionar um arquivo .txt ou .pdf</p>
+        </label>
+        <input type="file" id="file-input" accept=".txt,.pdf" style="display:none" onchange="handleFile(this)"/>
+      </div>
+
+      <button class="btn" onclick="classify()">
+        <span id="btn-text">Classificar Email</span>
+      </button>
+    </div>
+
+    <div class="result" id="result" style="display:none">
+      <div class="result-header">
+        <h3>Resultado da análise</h3>
+        <span class="category-badge" id="category-badge"></span>
+      </div>
+      <div class="metrics">
+        <div class="metric">
+          <div class="metric-label">Confiança</div>
+          <div class="metric-value" id="confidence-value"></div>
+          <div class="confidence-bar">
+            <div class="confidence-fill" id="confidence-fill"></div>
+          </div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Motivo</div>
+          <div class="metric-value-sm" id="motivo-value"></div>
+        </div>
+      </div>
+
+      <div class="label">Resposta sugerida</div>
+      <div class="response-box">
+        <p id="resposta-value"></p>
+        <button class="copy-btn" onclick="copyResposta()">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+          <span id="copy-text">Copiar resposta</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="error-box" id="error-box" style="display:none">
+      <p id="error-msg"></p>
+    </div>
+
+  </div>
+
+  <script>
+    let activeTab = 'text';
+    let selectedFile = null;
+
+    function switchTab(tab) {
+      activeTab = tab;
+      document.getElementById('tab-text').style.display = tab === 'text' ? 'block' : 'none';
+      document.getElementById('tab-file').style.display = tab === 'file' ? 'block' : 'none';
+      document.querySelectorAll('.tab').forEach((t, i) => {
+        t.classList.toggle('active', (tab === 'text' && i === 0) || (tab === 'file' && i === 1));
+      });
+    }
+
+    function handleFile(input) {
+      selectedFile = input.files[0];
+      if (selectedFile) {
+        document.getElementById('file-label').textContent = selectedFile.name;
+      }
+    }
+
+    async function classify() {
+      const btn = document.getElementById('btn-text');
+      const resultDiv = document.getElementById('result');
+      const errorBox = document.getElementById('error-box');
+
+      errorBox.style.display = 'none';
+      resultDiv.style.display = 'none';
+      btn.textContent = 'Classificando...';
+
+      const formData = new FormData();
+
+      if (activeTab === 'text') {
+        const text = document.getElementById('email-text').value.trim();
+        if (!text) {
+          showError('Por favor, insira o conteúdo do email.');
+          btn.textContent = 'Classificar Email';
+          return;
+        }
+        formData.append('email_text', text);
+      } else {
+        if (!selectedFile) {
+          showError('Por favor, selecione um arquivo.');
+          btn.textContent = 'Classificar Email';
+          return;
+        }
+        formData.append('file', selectedFile);
+      }
+
+      try {
+        const response = await fetch('/classify', {
+          method: 'POST',
+          body: formData
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          showError(data.detail || 'Erro ao classificar email.');
+          return;
+        }
+
+        showResult(data);
+      } catch (err) {
+        showError('Erro de conexão com o servidor.');
+      } finally {
+        btn.textContent = 'Classificar Email';
+      }
+    }
+
+    function showResult(data) {
+      const isProdutivo = data.categoria === 'Produtivo';
+
+      document.getElementById('category-badge').textContent = data.categoria;
+      document.getElementById('category-badge').className = 'category-badge ' + (isProdutivo ? 'produtivo' : 'improdutivo');
+      document.getElementById('confidence-value').textContent = data.confianca + '%';
+      document.getElementById('confidence-fill').style.width = data.confianca + '%';
+      document.getElementById('confidence-fill').className = 'confidence-fill ' + (isProdutivo ? 'produtivo' : 'improdutivo');
+      document.getElementById('motivo-value').textContent = data.motivo;
+      document.getElementById('resposta-value').textContent = data.resposta_sugerida;
+      document.getElementById('result').style.display = 'block';
+    }
+
+    function showError(msg) {
+      document.getElementById('error-msg').textContent = msg;
+      document.getElementById('error-box').style.display = 'block';
+    }
+
+    function copyResposta() {
+      const text = document.getElementById('resposta-value').textContent;
+      navigator.clipboard.writeText(text).then(() => {
+        document.getElementById('copy-text').textContent = 'Copiado!';
+        setTimeout(() => {
+          document.getElementById('copy-text').textContent = 'Copiar resposta';
+        }, 2000);
+      });
+    }
+  </script>
+</body>
+</html>
